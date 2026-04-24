@@ -392,36 +392,23 @@ def verify_invitation_code(email: str, code: str) -> bool:
 
 def send_access_code_email(recipient_email: str, access_code: str):
     """Send the access code to the recruiter's email."""
-    message = MIMEMultipart("alternative")
-    message["Subject"] = "Resume Screening System - Access Code"
-    message["From"] = SMTP_USERNAME
-    message["To"] = recipient_email
-
-    html = f"""
-    <html>
-    <body>
-        <h3>Recruiter Access Code</h3>
-        <p>You have requested access to register as a recruiter in the Resume Screening System.</p>
-        <div style="border-left: 5px solid #007bff; padding: 15px; background: #f8f9fa; margin: 20px 0;">
-            <h4 style="margin-top: 0; color: #007bff;">Your Access Code:</h4>
-            <p style="font-size: 24px; font-weight: bold; color: #dc3545; letter-spacing: 2px;">{access_code}</p>
-            <p style="margin-bottom: 0;"><small>This code is valid for 24 hours.</small></p>
-        </div>
-        <p>If you did not request this code, please ignore this email.</p>
-        <p>Best regards,<br>Resume Screening System Team</p>
-    </body></html>
-    """
-    message.attach(MIMEText(html, "html"))
+    # This pulls the data you just saved in the Secrets tab
+    sender_email = st.secrets["EMAIL_SENDER"]
+    sender_password = st.secrets["EMAIL_PASSWORD"]
 
     try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls(context=context)
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.sendmail(SMTP_USERNAME, recipient_email, message.as_string())
-        return True, "Access code sent successfully!"
+        msg = MIMEText(f"Hello! Your registration access code is: {access_code}")
+        msg['Subject'] = 'Access Code - Resume Screening System'
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
+
+        # Gmail SMTP settings
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        return True, "Email sent successfully!"
     except Exception as e:
-        return False, f"Failed to send email: {str(e)}"
+        return False, str(e)
 
 
 def hash_password(password: str) -> str:
@@ -558,12 +545,13 @@ def suggest_keywords(resume_text: str, job_description: str) -> list[str]:
 
 
 def send_acceptance_email(recipient_email: str, candidate_name: str, position: str, recruiter_name: str, custom_message: str = "") -> tuple[bool, str]:
-    if not SMTP_USERNAME or not SMTP_PASSWORD:
-        return False, "SMTP credentials are not configured."
+    # This pulls the data you just saved in the Secrets tab
+    sender_email = st.secrets["EMAIL_SENDER"]
+    sender_password = st.secrets["EMAIL_PASSWORD"]
 
     message = MIMEMultipart("alternative")
     message["Subject"] = f"Application Update: You are accepted for {position}"
-    message["From"] = SMTP_USERNAME
+    message["From"] = sender_email
     message["To"] = recipient_email
 
     text = (
@@ -600,11 +588,10 @@ def send_acceptance_email(recipient_email: str, candidate_name: str, position: s
     message.attach(part2)
 
     try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls(context=context)
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.sendmail(SMTP_USERNAME, recipient_email, message.as_string())
+        # Gmail SMTP settings
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(message)
         return True, ""
     except Exception as exc:
         return False, str(exc)
@@ -790,9 +777,12 @@ def recruiter_dashboard(user):
                 custom_message = st.text_area("Custom Message to Accepted Candidates", placeholder="e.g., Please attend the interview on [date] at [time].", height=100)
 
                 if st.button("Send acceptance to top candidates"):
-                    if not SMTP_USERNAME or not SMTP_PASSWORD:
+                    try:
+                        sender_email = st.secrets["EMAIL_SENDER"]
+                        sender_password = st.secrets["EMAIL_PASSWORD"]
+                    except KeyError:
                         st.error(
-                            "SMTP credentials are not configured. For deployment, set them in Streamlit secrets. For local testing, set SMTP_USERNAME and SMTP_PASSWORD environment variables or create a .env file."
+                            "Email credentials not configured in Streamlit secrets. Please set EMAIL_SENDER and EMAIL_PASSWORD in your secrets."
                         )
                     else:
                         sent = []
@@ -1011,13 +1001,17 @@ def main():
                             if st.button("Send Access Code"):
                                 if not recruiter_email or not validate_email(recruiter_email):
                                     st.error("Please enter a valid email address.")
-                                elif not SMTP_USERNAME or not SMTP_PASSWORD:
-                                    st.error("Email service is not configured. Please contact administrator.")
                                 else:
-                                    # Generate and save code
-                                    access_code = generate_access_code()
-                                    if save_invitation_code(recruiter_email, access_code):
-                                        # Send email
+                                    try:
+                                        sender_email = st.secrets["EMAIL_SENDER"]
+                                        sender_password = st.secrets["EMAIL_PASSWORD"]
+                                    except KeyError:
+                                        st.error("Email service is not configured. Please contact administrator.")
+                                    else:
+                                        # Generate and save code
+                                        access_code = generate_access_code()
+                                        if save_invitation_code(recruiter_email, access_code):
+                                            # Send email
                                         success, message = send_access_code_email(recruiter_email, access_code)
                                         if success:
                                             st.success("Access code sent to your email!")
