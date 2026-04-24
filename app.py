@@ -1012,16 +1012,16 @@ def main():
                                         access_code = generate_access_code()
                                         if save_invitation_code(recruiter_email, access_code):
                                             # Send email
-                                        success, message = send_access_code_email(recruiter_email, access_code)
-                                        if success:
-                                            st.success("Access code sent to your email!")
-                                            st.session_state["verification_email"] = recruiter_email
-                                            st.session_state["verification_step"] = "verify_code"
-                                            st.rerun()
+                                            success, message = send_access_code_email(recruiter_email, access_code)
+                                            if success:
+                                                st.success("Access code sent to your email!")
+                                                st.session_state["verification_email"] = recruiter_email
+                                                st.session_state["verification_step"] = "verify_code"
+                                                st.rerun()
+                                            else:
+                                                st.error(message)
                                         else:
-                                            st.error(message)
-                                    else:
-                                        st.error("Failed to generate access code. Please try again.")
+                                            st.error("Failed to generate access code. Please try again.")
 
                         elif st.session_state["verification_step"] == "verify_code":
                             st.markdown("### Step 3: Verify Access Code")
