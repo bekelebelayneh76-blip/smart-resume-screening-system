@@ -1,8 +1,0 @@
-pandas
-scikit-learn
-streamlit
-sentence-transformers
-PyPDF2
-nltk
-plotly
-python-dotenv

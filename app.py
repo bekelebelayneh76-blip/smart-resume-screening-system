@@ -3,7 +3,7 @@ import sqlite3
 from sqlite3 import Error
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import re
 import os
@@ -128,6 +128,62 @@ CUSTOM_CSS = """
         background-color: #28a745;
         width: 100%; /* Full for accepted */
     }
+    /* Stepper */
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 0;
+    }
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    .step-circle.active {
+        background-color: #28a745;
+        color: white;
+    }
+    .step-circle.completed {
+        background-color: #28a745;
+        color: white;
+    }
+    .step-line {
+        height: 2px;
+        background-color: #e9ecef;
+        flex: 1;
+        margin: 0 10px;
+    }
+    .step-line.completed {
+        background-color: #28a745;
+    }
+    .step-label {
+        font-size: 12px;
+        text-align: center;
+    }
+    /* Skill Badges */
+    .skill-badge {
+        display: inline-block;
+        background-color: #006400;
+        color: white;
+        padding: 5px 10px;
+        margin: 2px;
+        border-radius: 15px;
+        font-size: 12px;
+    }
 </style>
 """
 
@@ -187,14 +243,20 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS all_submissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     full_name TEXT NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
+                    email TEXT NOT NULL,
                     resume_text TEXT,
                     tf_idf_score REAL,
                     transformer_score REAL,
                     final_score REAL,
-                    upload_time DATETIME DEFAULT CURRENT_TIMESTAMP
+                    upload_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(email)
                 )
             """)
+            # Ensure the email column has a unique index for existing tables
+            try:
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_all_submissions_email ON all_submissions(email)")
+            except Error:
+                pass
             # Create invitation_codes table for recruiter pre-verification
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS invitation_codes (
@@ -241,22 +303,39 @@ def save_submission(name: str, email: str, resume_text: str, tf_idf_score: float
             cursor.close()
             connection.close()
 
-def find_submission_by_email(email: str) -> bool:
-    """Return True if a submission exists in the database for the provided email."""
+def find_submission_by_email(email: str):
+    """Return submission data if exists, else None."""
     connection = get_sqlite_connection()
     if connection:
         cursor = connection.cursor()
         try:
-            cursor.execute("SELECT 1 FROM all_submissions WHERE email = ? LIMIT 1", (email,))
+            cursor.execute("SELECT * FROM all_submissions WHERE email = ? LIMIT 1", (email,))
             result = cursor.fetchone()
-            return result is not None
+            return result
         except Error as e:
             st.error(f"Error checking submission: {e}")
+            return None
+        finally:
+            cursor.close()
+            connection.close()
+    return None
+
+
+def clear_all_submissions() -> bool:
+    """Delete all rows from the submissions table."""
+    connection = get_sqlite_connection()
+    if connection:
+        cursor = connection.cursor()
+        try:
+            cursor.execute("DELETE FROM all_submissions")
+            connection.commit()
+            return True
+        except Error as e:
+            st.error(f"Error clearing submissions: {e}")
             return False
         finally:
             cursor.close()
             connection.close()
-    return False
 
 
 # --- Pre-Verification Functions for Recruiters ---
@@ -383,7 +462,7 @@ def register_user(name: str, email: str, phone: str, password: str, role: str):
         connection.close()
 
 
-def login_user(email: str, password: str) -> dict or None:
+def login_user(email: str, password: str) -> dict | None:
     """Login user and return user info if successful."""
     connection = get_sqlite_connection()
     if not connection:
@@ -445,6 +524,39 @@ def score_candidates(df, job_description, vectorizer, transformer):
     return results_df.sort_values(["Final Score", "upload_time"], ascending=[False, False]).reset_index(drop=True)
 
 
+def extract_skills(resume_text: str) -> list[str]:
+    """Extract common skills from resume text."""
+    common_skills = [
+        "Python", "Java", "JavaScript", "C++", "SQL", "Machine Learning", "Data Analysis",
+        "HTML", "CSS", "React", "Node.js", "Django", "Flask", "TensorFlow", "PyTorch",
+        "AWS", "Docker", "Git", "Linux", "Agile", "Scrum"
+    ]
+    found_skills = []
+    resume_lower = resume_text.lower()
+    for skill in common_skills:
+        if skill.lower() in resume_lower:
+            found_skills.append(skill)
+    return found_skills[:10]  # Limit to 10 skills
+
+
+def compute_resume_strength(resume_text: str, job_description: str) -> float:
+    """Compute a simple resume strength score based on keyword matching."""
+    job_words = set(preprocess_text(job_description).split())
+    resume_words = set(preprocess_text(resume_text).split())
+    matching_words = job_words.intersection(resume_words)
+    return len(matching_words) / len(job_words) if job_words else 0.0
+
+
+def suggest_keywords(resume_text: str, job_description: str) -> list[str]:
+    """Suggest 2-3 keywords from job description not in resume."""
+    job_words = set(preprocess_text(job_description).split())
+    resume_words = set(preprocess_text(resume_text).split())
+    missing_words = job_words - resume_words
+    # Filter to meaningful words (length > 3)
+    meaningful = [word for word in missing_words if len(word) > 3]
+    return meaningful[:3]
+
+
 def send_acceptance_email(recipient_email: str, candidate_name: str, position: str, recruiter_name: str, custom_message: str = "") -> tuple[bool, str]:
     if not SMTP_USERNAME or not SMTP_PASSWORD:
         return False, "SMTP credentials are not configured."
@@ -501,12 +613,32 @@ def send_acceptance_email(recipient_email: str, candidate_name: str, position: s
 def candidate_dashboard(user):
     st.header(f"Welcome, {user['name']} (Candidate)")
     
-    # Display status badge
+    # Determine status
     accepted_emails = st.session_state.get("accepted_emails", [])
-    if user['email'] in accepted_emails:
-        st.markdown('<span class="badge badge-accepted">Accepted ✅</span>', unsafe_allow_html=True)
-    else:
-        st.markdown('<span class="badge badge-processing">Under Review ⏳</span>', unsafe_allow_html=True)
+    submission = find_submission_by_email(user['email'])
+    has_submission = submission is not None
+    is_accepted = user['email'] in accepted_emails
+    
+    # Visual Status Tracker: Stepper
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<div class="green-text"><strong>Application Status</strong></div>', unsafe_allow_html=True)
+    steps = ["Applied", "Under Review", "Shortlisted"]
+    current_step = 0
+    if has_submission:
+        current_step = 1
+    if is_accepted:
+        current_step = 2
+    
+    stepper_html = '<div class="stepper">'
+    for i, step in enumerate(steps):
+        active_class = "active" if i == current_step else ("completed" if i < current_step else "")
+        line_class = "completed" if i < current_step else ""
+        stepper_html += f'<div class="step"><div class="step-circle {active_class}">{i+1}</div><div class="step-label">{step}</div></div>'
+        if i < len(steps) - 1:
+            stepper_html += f'<div class="step-line {line_class}"></div>'
+    stepper_html += '</div>'
+    st.markdown(stepper_html, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
 
@@ -526,26 +658,48 @@ def candidate_dashboard(user):
                     resume_text = extract_text_from_file(uploaded_file)
                     save_submission(user['name'], user['email'], resume_text)
                 st.success("Application Received! Your CV has been submitted successfully.")
+                submission = find_submission_by_email(user['email'])
         st.markdown('</div>', unsafe_allow_html=True)
+
+        if submission:
+            st.markdown('---')
+            st.markdown('### Your Submitted CV Review')
+            if submission[3]:
+                st.text_area("Submitted resume text", submission[3], height=250)
+            else:
+                st.info("Your uploaded resume is stored and awaiting reviewer analysis.")
+
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="green-text"><strong>Check My Status</strong></div>', unsafe_allow_html=True)
-        if st.button("Check My Status", key="check_status"):
-            if find_submission_by_email(user['email']):
-                message = "Status: Received. Your application is in the system."
-                if "scores_df" in st.session_state:
-                    score_row = st.session_state["scores_df"][st.session_state["scores_df"]["Email"] == user['email']]
-                    if not score_row.empty:
-                        score_value = score_row.iloc[0]["Final Score"]
-                        message = f"Status: Received. Your match score is {score_value:.1%}."
-                        st.markdown(f'<span class="badge badge-accepted">Accepted</span>', unsafe_allow_html=True)
-                    else:
-                        st.markdown(f'<span class="badge badge-processing">Processing</span>', unsafe_allow_html=True)
-                st.info(message)
+        st.markdown('<div class="green-text"><strong>Resume Analysis</strong></div>', unsafe_allow_html=True)
+        
+        # Skill Extraction
+        submission = find_submission_by_email(user['email'])
+        if submission:
+            resume_text = submission[3]  # resume_text is at index 3
+            skills = extract_skills(resume_text)
+            if skills:
+                st.markdown("**Detected Skills:**")
+                skill_badges = "".join([f'<span class="skill-badge">{skill}</span>' for skill in skills])
+                st.markdown(skill_badges, unsafe_allow_html=True)
             else:
-                st.warning("No submission found for your email.")
+                st.info("No skills detected. Consider adding technical skills to your resume.")
+        
+        # Match Feedback
+        if "job_description" in st.session_state and submission:
+            job_desc = st.session_state["job_description"]
+            resume_text = submission[3]  # resume_text is at index 3
+            strength_score = compute_resume_strength(resume_text, job_desc)
+            st.markdown(f"**Resume Strength:** {strength_score:.1%}")
+            tips = suggest_keywords(resume_text, job_desc)
+            if tips:
+                st.markdown("**💡 Tips:** Add these keywords to improve matching:")
+                st.write(", ".join(tips))
+        else:
+            st.info("Submit your resume and wait for recruiter to set job description for analysis.")
+        
         st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -574,6 +728,9 @@ def recruiter_dashboard(user):
             elif not job_title.strip():
                 st.error("Please enter a job title.")
             else:
+                # Remove stale ranking rows before writing new results
+                clear_all_submissions()
+
                 resume_texts = [preprocess_text(text) for text in submissions_df["Resume_Text"]]
                 vectorizer, transformer = build_models(resume_texts)
                 scores_df = score_candidates(submissions_df, job_description, vectorizer, transformer)
@@ -591,6 +748,7 @@ def recruiter_dashboard(user):
 
                 st.session_state["scores_df"] = scores_df
                 st.session_state["job_title"] = job_title
+                st.session_state["job_description"] = job_description
                 st.session_state["num_candidates"] = int(num_candidates)
 
         if "scores_df" in st.session_state:
@@ -605,13 +763,27 @@ def recruiter_dashboard(user):
             with tab1:
                 st.subheader("Ranked Candidates")
                 st.write(f"Top {top_n} candidate(s) for '{job_title}'")
-                st.dataframe(style_scores_table(scores_df))
+                
+                # Smart Filtering
+                min_score = st.slider("Filter by minimum Final Score", 0.0, 1.0, 0.0, 0.01, format="%.2f")
+                filtered_df = scores_df[scores_df["Final Score"] >= min_score]
+                
+                st.dataframe(style_scores_table(filtered_df))
 
                 st.markdown("---")
                 st.subheader("Accepted Candidate Emails")
                 st.dataframe(
                     selected_df[["Name", "Email", "Final Score"]]
                     .style.format({"Final Score": "{:.2%}"})
+                )
+                
+                # Export to CSV
+                csv_data = selected_df[["Name", "Email", "Final Score"]].to_csv(index=False)
+                st.download_button(
+                    label="Download Accepted Candidates as CSV",
+                    data=csv_data,
+                    file_name="accepted_candidates.csv",
+                    mime="text/csv"
                 )
 
                 job_position = st.text_input("Position", value=job_title, key="accepted_job_position")
@@ -644,28 +816,23 @@ def recruiter_dashboard(user):
                             st.error(f"Failed to send email to: {', '.join(failed)}")
 
             with tab2:
-                st.subheader("Candidate Comparison")
-                compare_df = scores_df.melt(
-                    id_vars=["Name"],
-                    value_vars=["TF-IDF Score", "Transformer Score"],
-                    var_name="Score Type",
-                    value_name="Score",
-                )
+                st.subheader("Top 5 Candidates")
+                top_5_df = scores_df.head(5)
                 fig = px.bar(
-                    compare_df,
+                    top_5_df,
                     x="Name",
-                    y="Score",
-                    color="Score Type",
-                    barmode="group",
-                    title="Candidate Score Comparison",
-                    text="Score",
+                    y="Final Score",
+                    title="Top 5 Candidates by Final Score",
+                    text="Final Score",
+                    color="Final Score",
+                    color_continuous_scale="greens"
                 )
                 fig.update_layout(
                     xaxis_tickangle=-45,
-                    yaxis_title="Score",
-                    legend_title_text="Score Type",
+                    yaxis_title="Final Score",
+                    yaxis_tickformat=".1%"
                 )
-                fig.update_traces(texttemplate="%{text:.2f}", textposition="outside")
+                fig.update_traces(texttemplate="%{text:.1%}", textposition="outside")
                 st.plotly_chart(fig)
 
 
@@ -708,17 +875,43 @@ def style_scores_table(df: pd.DataFrame) -> pd.io.formats.style.Styler:
 def main():
     # Initialize database
     init_db()
-    
+
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
-    
+
     # Header
     st.markdown('<div class="header"> Resume Screening System</div>', unsafe_allow_html=True)
     # Main content
     st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
+    # Check for logout via URL parameter
+    query_params = st.query_params
+    if query_params.get("logout") == "true":
+        # Clear all session state
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.query_params.clear()
+        st.success("You have been logged out successfully!")
+        st.rerun()
+
+    # Check for session timeout (30 minutes)
+    if "user" in st.session_state and "login_time" in st.session_state:
+        if datetime.now() - st.session_state["login_time"] > timedelta(minutes=30):
+            st.warning("Your session has expired due to inactivity. Please log in again.")
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.rerun()
+
     # Check if user is logged in
     if "user" not in st.session_state:
         st.session_state["user"] = None
+    if "needs_redirect" not in st.session_state:
+        st.session_state["needs_redirect"] = False
+    if "skip_redirect_once" not in st.session_state:
+        st.session_state["skip_redirect_once"] = False
+    if "login_success_message" not in st.session_state:
+        st.session_state["login_success_message"] = ""
+    if "login_success_visible" not in st.session_state:
+        st.session_state["login_success_visible"] = False
 
     if st.session_state["user"] is None:
         # Login/Register Page
@@ -726,18 +919,25 @@ def main():
 
         outer_col1, outer_col2, outer_col3 = st.columns([1, 2, 1])
         with outer_col2:
-            tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
+            login_default = "🔐 Login" if st.session_state.get("needs_redirect") and not st.session_state.get("skip_redirect_once") else None
+            tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"], default=login_default)
 
             with tab1:
                 st.subheader("Login")
-                if st.session_state.get("registration_message"):
-                    st.success(st.session_state["registration_message"])
+                st.session_state.pop("reg_success_internal", None)
+                st.session_state.pop("registration_message", None)
                 email = st.text_input("Email", key="login_email", autocomplete="email")
                 password = st.text_input("Password", type="password", key="login_password", autocomplete="current-password")
+                if st.session_state.get("login_success_visible"):
+                    st.success(st.session_state.get("login_success_message", "Registration successful! Please login."))
+                    st.session_state["login_success_visible"] = False
+                    st.session_state["login_success_message"] = ""
+                    st.session_state["needs_redirect"] = False
                 if st.button("Login"):
                     user = login_user(email, password)
                     if user:
                         st.session_state["user"] = user
+                        st.session_state["login_time"] = datetime.now()
                         st.success("Logged in successfully!")
                         st.session_state.pop("registration_message", None)
                         st.rerun()
@@ -752,12 +952,17 @@ def main():
                     st.session_state["verification_step"] = "select_role"
                 if "verification_email" not in st.session_state:
                     st.session_state["verification_email"] = ""
+                if "admin_authorized" not in st.session_state:
+                    st.session_state["admin_authorized"] = False
+                if "recruiter_step" not in st.session_state:
+                    st.session_state["recruiter_step"] = "start"
 
                 role = st.radio("Register as:", ["👤 Candidate", "🔑 Recruiter"], key="reg_role")
 
                 if role == "👤 Candidate":
                     # Simple registration for candidates
                     st.markdown("### Candidate Registration")
+
                     name = st.text_input("Full Name", key="reg_name", autocomplete="name")
                     email = st.text_input("Email", key="reg_email", autocomplete="email")
                     phone = st.text_input("Phone", key="reg_phone", autocomplete="tel")
@@ -774,105 +979,129 @@ def main():
                         else:
                             success, message = register_user(name, email, phone, password, "candidate")
                             if success:
-                                st.session_state["registration_message"] = "Registration successful! Please login."
-                                # Reset form
+                                st.success("Registration successful! Please login.")
+                                st.session_state["needs_redirect"] = True
+                                st.session_state["skip_redirect_once"] = True
+                                st.session_state["login_success_message"] = "Registration successful! Please login."
+                                st.session_state["login_success_visible"] = True
                                 st.session_state["verification_step"] = "select_role"
-                                st.rerun()
                             else:
                                 st.error(message)
 
                 else:  # Recruiter
-                    # Pre-verification workflow for recruiters
-                    if st.session_state["verification_step"] == "select_role":
-                        st.markdown("### Step 1: Request Access Code")
-                        st.info("🔐 Recruiters must verify their email before registration.")
-                        recruiter_email = st.text_input("Enter your email address", key="recruiter_email", autocomplete="email")
+                    if not st.session_state["admin_authorized"]:
+                        st.markdown("### Step 1: Admin Authorization")
+                        st.info("🔐 Admin authorization required for recruiter registration.")
+                        admin_key = st.text_input("Enter Admin Master Key", type="password", key="admin_key")
 
-                        if st.button("Send Access Code"):
-                            if not recruiter_email or not validate_email(recruiter_email):
-                                st.error("Please enter a valid email address.")
-                            elif not SMTP_USERNAME or not SMTP_PASSWORD:
-                                st.error("Email service is not configured. Please contact administrator.")
+                        if st.button("Authorize"):
+                            if admin_key == "MAU_ADMIN_2026":
+                                st.session_state["admin_authorized"] = True
+                                st.success("✅ Admin authorization successful!")
+                                st.rerun()
                             else:
-                                # Generate and save code
-                                access_code = generate_access_code()
-                                if save_invitation_code(recruiter_email, access_code):
-                                    # Send email
-                                    success, message = send_access_code_email(recruiter_email, access_code)
-                                    if success:
-                                        st.success("Access code sent to your email!")
-                                        st.session_state["verification_email"] = recruiter_email
-                                        st.session_state["verification_step"] = "verify_code"
+                                st.error("❌ Invalid admin key.")
+                    else:
+                        # Pre-verification workflow for recruiters
+                        if st.session_state["verification_step"] == "select_role":
+                            st.markdown("### Step 2: Request Access Code")
+                            st.info("🔐 Recruiters must verify their email before registration.")
+                            recruiter_email = st.text_input("Enter your email address", key="recruiter_email", autocomplete="email")
+
+                            if st.button("Send Access Code"):
+                                if not recruiter_email or not validate_email(recruiter_email):
+                                    st.error("Please enter a valid email address.")
+                                elif not SMTP_USERNAME or not SMTP_PASSWORD:
+                                    st.error("Email service is not configured. Please contact administrator.")
+                                else:
+                                    # Generate and save code
+                                    access_code = generate_access_code()
+                                    if save_invitation_code(recruiter_email, access_code):
+                                        # Send email
+                                        success, message = send_access_code_email(recruiter_email, access_code)
+                                        if success:
+                                            st.success("Access code sent to your email!")
+                                            st.session_state["verification_email"] = recruiter_email
+                                            st.session_state["verification_step"] = "verify_code"
+                                            st.rerun()
+                                        else:
+                                            st.error(message)
+                                    else:
+                                        st.error("Failed to generate access code. Please try again.")
+
+                        elif st.session_state["verification_step"] == "verify_code":
+                            st.markdown("### Step 3: Verify Access Code")
+                            st.info(f"📧 Code sent to: {st.session_state['verification_email']}")
+                            entered_code = st.text_input("Enter the 6-character access code", key="entered_code", max_chars=6)
+
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                if st.button("Verify Code"):
+                                    if not entered_code or len(entered_code) != 6:
+                                        st.error("Please enter a valid 6-character code.")
+                                    elif verify_invitation_code(st.session_state["verification_email"], entered_code.upper()):
+                                        st.success("✅ Code verified successfully!")
+                                        st.session_state["verification_step"] = "complete_registration"
                                         st.rerun()
                                     else:
-                                        st.error(message)
+                                        st.error("❌ Invalid or expired code. Please try again.")
+
+                            with col2:
+                                if st.button("Resend Code"):
+                                    # Generate new code and resend
+                                    access_code = generate_access_code()
+                                    if save_invitation_code(st.session_state["verification_email"], access_code):
+                                        success, message = send_access_code_email(st.session_state["verification_email"], access_code)
+                                        if success:
+                                            st.success("New access code sent!")
+                                        else:
+                                            st.error(message)
+                                    else:
+                                        st.error("Failed to generate new code.")
+
+                            if st.button("← Back to Email Input"):
+                                st.session_state["verification_step"] = "select_role"
+                                st.session_state["verification_email"] = ""
+                                st.rerun()
+
+                        elif st.session_state["verification_step"] == "complete_registration":
+                            st.markdown("### Step 4: Complete Registration")
+                            st.success(f"✅ Email verified: {st.session_state['verification_email']}")
+
+                            name = st.text_input("Full Name", key="reg_name", autocomplete="name")
+                            phone = st.text_input("Phone", key="reg_phone", autocomplete="tel")
+                            password = st.text_input("Password", type="password", key="reg_password", autocomplete="new-password")
+                            confirm_password = st.text_input("Confirm Password", type="password", key="reg_confirm", autocomplete="new-password")
+
+                            if st.button("Complete Registration"):
+                                if password != confirm_password:
+                                    st.error("Passwords do not match.")
+                                elif not all([name, phone, password]):
+                                    st.error("Please fill all fields.")
                                 else:
-                                    st.error("Failed to generate access code. Please try again.")
-
-                    elif st.session_state["verification_step"] == "verify_code":
-                        st.markdown("### Step 2: Verify Access Code")
-                        st.info(f"📧 Code sent to: {st.session_state['verification_email']}")
-                        entered_code = st.text_input("Enter the 6-character access code", key="entered_code", max_chars=6)
-
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            if st.button("Verify Code"):
-                                if not entered_code or len(entered_code) != 6:
-                                    st.error("Please enter a valid 6-character code.")
-                                elif verify_invitation_code(st.session_state["verification_email"], entered_code.upper()):
-                                    st.success("✅ Code verified successfully!")
-                                    st.session_state["verification_step"] = "complete_registration"
-                                    st.rerun()
-                                else:
-                                    st.error("❌ Invalid or expired code. Please try again.")
-
-                        with col2:
-                            if st.button("Resend Code"):
-                                # Generate new code and resend
-                                access_code = generate_access_code()
-                                if save_invitation_code(st.session_state["verification_email"], access_code):
-                                    success, message = send_access_code_email(st.session_state["verification_email"], access_code)
+                                    success, message = register_user(name, st.session_state["verification_email"], phone, password, "recruiter")
                                     if success:
-                                        st.success("New access code sent!")
+                                        st.success("Registration successful! Please login.")
+                                        st.session_state["needs_redirect"] = True
+                                        st.session_state["skip_redirect_once"] = True
+                                        st.session_state["login_success_message"] = "Registration successful! Please login."
+                                        st.session_state["login_success_visible"] = True
+                                        st.session_state["recruiter_step"] = "start"
+                                        st.session_state["verification_step"] = "complete_registration"
+                                        st.session_state["admin_authorized"] = True
                                     else:
                                         st.error(message)
-                                else:
-                                    st.error("Failed to generate new code.")
 
-                        if st.button("← Back to Email Input"):
-                            st.session_state["verification_step"] = "select_role"
-                            st.session_state["verification_email"] = ""
-                            st.rerun()
-
-                    elif st.session_state["verification_step"] == "complete_registration":
-                        st.markdown("### Step 3: Complete Registration")
-                        st.success(f"✅ Email verified: {st.session_state['verification_email']}")
-
-                        name = st.text_input("Full Name", key="reg_name", autocomplete="name")
-                        phone = st.text_input("Phone", key="reg_phone", autocomplete="tel")
-                        password = st.text_input("Password", type="password", key="reg_password", autocomplete="new-password")
-                        confirm_password = st.text_input("Confirm Password", type="password", key="reg_confirm", autocomplete="new-password")
-
-                        if st.button("Complete Registration"):
-                            if password != confirm_password:
-                                st.error("Passwords do not match.")
-                            elif not all([name, phone, password]):
-                                st.error("Please fill all fields.")
-                            else:
-                                success, message = register_user(name, st.session_state["verification_email"], phone, password, "recruiter")
-                                if success:
-                                    st.session_state["registration_message"] = "Recruiter registration completed successfully! Please login."
-                                    # Reset session state
+                                if st.button("← Start Over"):
                                     st.session_state["verification_step"] = "select_role"
                                     st.session_state["verification_email"] = ""
+                                    st.session_state["admin_authorized"] = False
+                                    st.session_state["recruiter_step"] = "start"
                                     st.rerun()
-                                else:
-                                    st.error(message)
 
-                        if st.button("← Start Over"):
-                            st.session_state["verification_step"] = "select_role"
-                            st.session_state["verification_email"] = ""
-                            st.rerun()
+                if st.session_state.get("skip_redirect_once"):
+                    st.session_state["skip_redirect_once"] = False
+
     else:
         # Dashboard based on role
         user = st.session_state["user"]
@@ -880,10 +1109,21 @@ def main():
             candidate_dashboard(user)
         elif user["role"] == "recruiter":
             recruiter_dashboard(user)
-        
+            # Temporary reset button for clearing all submissions is only visible to recruiters
+            if st.sidebar.button("Reset all submissions"):
+                if clear_all_submissions():
+                    st.success("All submissions have been cleared.")
+                    st.session_state.pop("scores_df", None)
+                    st.session_state.pop("accepted_emails", None)
+                    return
+
         # Logout button
         if st.sidebar.button("Logout"):
-            st.session_state["user"] = None
+            # Clear all session state
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            # Redirect with logout parameter to ensure clean logout
+            st.query_params["logout"] = "true"
             st.rerun()
 
         # About text below logout button
