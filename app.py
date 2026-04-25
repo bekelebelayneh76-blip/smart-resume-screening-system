@@ -29,30 +29,26 @@ st.set_page_config(
     page_icon="📄",
     layout="wide",
 )
+
+# --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
 st.markdown("""
     <style>
-    /* 1. ሁሉንም Header (GitHub, Fork, Deploy) በአንድ ላይ ለማጥፋት */
-    [data-testid="stHeader"] {
+    /* የ GitHub 'Fork' እና 'Deploy' በተን ብቻ ለመደበቅ */
+    header[data-testid="stHeader"] a[href*="github.com"],
+    header[data-testid="stHeader"] a[aria-label*="GitHub"],
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
         display: none !important;
+        visibility: hidden !important;
     }
 
-    /* 2. በስተቀኝ በኩል ከታች የሚታየውን የ Streamlit 'Manage app' Toolbar ለመደበቅ */
-    [data-testid="stToolbar"] {
-        display: none !important;
+    /* ሜኑውን ለመደበቅ */
+    #MainMenu {
+        visibility: hidden;
     }
 
-    /* 3. ሜኑውን እና Footer-ን (Made with Streamlit) ለመደበቅ */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-
-    /* 4. አጠቃላይ የ Streamlit ተንሳፋፊ ምልክቶችን ለማጥፋት */
-    .stDeployButton {
-        display: none !important;
-    }
-    
-    /* 5. ለተጨማሪ ጥንቃቄ ሁሉንም ማገናኛዎች በ Header ውስጥ መደበቅ */
-    header a {
-        display: none !important;
+    /* የ Sidebar ቀስት (<<) እንዲታይ Header-ን ሙሉ በሙሉ Display None አናደርገውም */
+    header[data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0);
     }
     </style>
     """, unsafe_allow_html=True)
