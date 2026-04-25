@@ -33,6 +33,10 @@ st.set_page_config(
 # --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
 st.markdown("""
     <style>
+            header img {
+        display: none !important;
+    }
+            
     /* 1. ያንተ የነበረው ኮድ (GitHub እና Fork ለመደበቅ) */
     header[data-testid="stHeader"] a[href*="github.com"],
     header[data-testid="stHeader"] a[aria-label*="GitHub"],
