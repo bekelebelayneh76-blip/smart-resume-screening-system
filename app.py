@@ -29,15 +29,15 @@ st.set_page_config(
     page_icon="📄",
     layout="wide",
 )
-
-# --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
+# --- 2. የ CSS ማስተካከያ (ሁሉንም ምልክቶች ለመደበቅ) ---
 st.markdown("""
     <style>
-            header img {
+    /* 1. በ Header ውስጥ ያለውን ማንኛውንም ምስል (ፕሮፋይል ፎቶ) መደበቂያ */
+    header img, [data-testid="stHeader"] img {
         display: none !important;
     }
             
-    /* 1. ያንተ የነበረው ኮድ (GitHub እና Fork ለመደበቅ) */
+    /* 2. የ GitHub 'Fork' እና 'Deploy' በተን መደበቂያ */
     header[data-testid="stHeader"] a[href*="github.com"],
     header[data-testid="stHeader"] a[aria-label*="GitHub"],
     header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
@@ -45,31 +45,30 @@ st.markdown("""
         visibility: hidden !important;
     }
 
-    /* 2. ያንተ የነበረው ኮድ (ሜኑውን ለመደበቅ) */
+    /* 3. ሜኑውን (ሶስት ነጥቡን) መደበቂያ */
     #MainMenu {
-        visibility: hidden;
+        visibility: hidden !important;
     }
 
-    /* 3. ያንተ የነበረው ኮድ (Sidebar ቀስት እንዲታይ) */
+    /* 4. የ Sidebar ቀስት (<<) እንዲታይ Header-ን ግልጽ ማድረግ */
     header[data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0);
+        background-color: rgba(0,0,0,0) !important;
     }
 
-    /* --- አዲስ የተጨመረ፡ የፕሮፋይል ፎቶን ብቻ ለመደበቅ --- */
-    
-    /* 4. የፕሮፋይል ፎቶውን (Avatar icon) መደበቂያ */
-    [data-testid="stHeader"] img {
-        display: none !important;
-    }
-
-    /* 5. አይጥ ሲጠጋ የሚመጣውን 'View Profile' በተን መከልከያ */
+    /* 5. አይጥ ሲጠጋ የሚመጣውን 'View Profile' በተን እና ካርድ መከልከያ */
     button[aria-label="View profile"], 
-    .st-emotion-cache-1vq4p4l {
+    .st-emotion-cache-1vq4p4l,
+    [data-testid="stStatusWidget"] {
         display: none !important;
     }
 
-    /* 6. በስተቀኝ በኩል ያለውን የፕሮፋይል በተን ሙሉ በሙሉ ማጥፊያ */
-    [data-testid="stHeaderActionButton"] {
+    /* 6. በስተቀኝ በኩል ያለውን የፕሮፋይል እና የ Toolbar በተን ሙሉ በሙሉ ማጥፊያ */
+    [data-testid="stHeaderActionButton"], [data-testid="stToolbar"] {
+        display: none !important;
+    }
+
+    /* 7. ያቺን ቀይ የ "Hosted with Streamlit" ምልክት እና Footer መደበቂያ */
+    footer {
         display: none !important;
     }
     </style>
