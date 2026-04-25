@@ -1,0 +1,4 @@
+[ui]
+hideTopBar = true
+[client]
+toolbarMode = 'viewer'
