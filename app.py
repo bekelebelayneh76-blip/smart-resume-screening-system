@@ -212,6 +212,24 @@ CUSTOM_CSS = """
         border-radius: 15px;
         font-size: 12px;
     }
+    /* Hide GitHub Fork icon and Deploy button */
+    header[data-testid="stHeader"] a[href*="github.com"],
+    header[data-testid="stHeader"] a[href*="fork"],
+    header[data-testid="stHeader"] button:contains("Deploy"),
+    section[data-testid="stSidebar"] button[title="Collapse"],
+    div[data-testid="deployButton"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    /* Alternative selectors for newer Streamlit versions */
+    .stApp > header .stGitHubButton,
+    .stApp > header [data-testid="deployButton"],
+    header a[aria-label="Fork"],
+    header button[aria-label*="Deploy"] {
+        display: none !important;
+    }
 </style>
 """
 
