@@ -21,35 +21,6 @@ from src.modeling import compute_weighted_score, apply_min_max_scaling
 from streamlit.runtime.secrets import StreamlitSecretNotFoundError
 
 
-# ኮዱን እዚህ ጋር ነው መለጠፍ ያለብህ
-
-st.markdown("""
-    <style>
-    header[data-testid="stHeader"] a {
-        display: none !important;
-    }
-    .stAppDeployButton {
-        display: none !important;
-    }
-    #MainMenu {
-        visibility: hidden;
-    }
-    /* Hide GitHub Fork and Deploy button, but NOT the sidebar collapse arrow */
-    header[data-testid="stHeader"] a[href*="github.com"],
-    header[data-testid="stHeader"] a[aria-label*="GitHub"],
-    header[data-testid="stHeader"] a:has(svg),
-    header[data-testid="stHeader"] button[aria-label*="Fork"],
-    header[data-testid="stHeader"] button[aria-label*="Deploy"],
-    header[data-testid="stHeader"] div:has(svg),
-    header[data-testid="stHeader"] [data-testid="stToolbarActions"] > a[href*="github.com"],
-    header[data-testid="stHeader"] [data-testid="stToolbarActions"] > a[aria-label*="GitHub"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 # የቀረው የፕሮግራምህ ክፍል እዚህ ይቀጥላል...
 
@@ -58,6 +29,29 @@ st.set_page_config(
     page_icon="📄",
     layout="wide",
 )
+
+# --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
+st.markdown("""
+    <style>
+    /* የ GitHub 'Fork' እና 'Deploy' በተን ብቻ ለመደበቅ */
+    header[data-testid="stHeader"] a[href*="github.com"],
+    header[data-testid="stHeader"] a[aria-label*="GitHub"],
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* ሜኑውን ለመደበቅ */
+    #MainMenu {
+        visibility: hidden;
+    }
+
+    /* የ Sidebar ቀስት (<<) እንዲታይ Header-ን ሙሉ በሙሉ Display None አናደርገውም */
+    header[data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0);
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 CUSTOM_CSS = """
 <style>
