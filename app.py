@@ -30,40 +30,46 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- 2. የ CSS ማስተካከያ (ለ Streamlit v1.56.0 ተብሎ የተሰራ) ---
+# --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
 st.markdown("""
     <style>
-    /* 1. የላይኛውን Header (ጥቁር/ነጭ ባር) ሙሉ በሙሉ ማጥፋት */
-    [data-testid="stHeader"] {
+            header img {
         display: none !important;
     }
-
-    /* 2. የፕሮፋይል ፎቶን እና የ Toolbar በተኖችን በሃይል መደበቂያ */
-    [data-testid="stHeaderActionButton"], 
-    .st-emotion-cache-1vq4p4l, 
-    .st-emotion-cache-zt5icj,
-    [data-testid="stToolbar"] {
+            
+    /* 1. ያንተ የነበረው ኮድ (GitHub እና Fork ለመደበቅ) */
+    header[data-testid="stHeader"] a[href*="github.com"],
+    header[data-testid="stHeader"] a[aria-label*="GitHub"],
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
         display: none !important;
         visibility: hidden !important;
     }
 
-    /* 3. የቀይዋን Streamlit ምልክት (Footer) እና ሜኑ መደበቂያ */
-    footer {
-        display: none !important;
-    }
-    
+    /* 2. ያንተ የነበረው ኮድ (ሜኑውን ለመደበቅ) */
     #MainMenu {
-        visibility: hidden !important;
+        visibility: hidden;
     }
 
-    /* 4. ገጹን ወደ ላይ አስጠግቶ ክፍተቱን መሙላት */
-    .block-container {
-        padding-top: 0rem !important;
-        margin-top: -5rem !important;
+    /* 3. ያንተ የነበረው ኮድ (Sidebar ቀስት እንዲታይ) */
+    header[data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0);
     }
+
+    /* --- አዲስ የተጨመረ፡ የፕሮፋይል ፎቶን ብቻ ለመደበቅ --- */
     
-    /* 5. ማንኛውም ምስል በ Header ውስጥ እንዳይኖር መከልከል */
-    header img {
+    /* 4. የፕሮፋይል ፎቶውን (Avatar icon) መደበቂያ */
+    [data-testid="stHeader"] img {
+        display: none !important;
+    }
+
+    /* 5. አይጥ ሲጠጋ የሚመጣውን 'View Profile' በተን መከልከያ */
+    button[aria-label="View profile"], 
+    .st-emotion-cache-1vq4p4l {
+        display: none !important;
+    }
+
+    /* 6. በስተቀኝ በኩል ያለውን የፕሮፋይል በተን ሙሉ በሙሉ ማጥፊያ */
+    [data-testid="stHeaderActionButton"] {
         display: none !important;
     }
     </style>
