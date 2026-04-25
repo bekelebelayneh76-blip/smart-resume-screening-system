@@ -33,7 +33,7 @@ st.set_page_config(
 # --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
 st.markdown("""
     <style>
-    /* የ GitHub 'Fork' እና 'Deploy' በተን ብቻ ለመደበቅ */
+    /* 1. ያንተ የነበረው ኮድ (GitHub እና Fork ለመደበቅ) */
     header[data-testid="stHeader"] a[href*="github.com"],
     header[data-testid="stHeader"] a[aria-label*="GitHub"],
     header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
@@ -41,14 +41,32 @@ st.markdown("""
         visibility: hidden !important;
     }
 
-    /* ሜኑውን ለመደበቅ */
+    /* 2. ያንተ የነበረው ኮድ (ሜኑውን ለመደበቅ) */
     #MainMenu {
         visibility: hidden;
     }
 
-    /* የ Sidebar ቀስት (<<) እንዲታይ Header-ን ሙሉ በሙሉ Display None አናደርገውም */
+    /* 3. ያንተ የነበረው ኮድ (Sidebar ቀስት እንዲታይ) */
     header[data-testid="stHeader"] {
         background-color: rgba(0,0,0,0);
+    }
+
+    /* --- አዲስ የተጨመረ፡ የፕሮፋይል ፎቶን ብቻ ለመደበቅ --- */
+    
+    /* 4. የፕሮፋይል ፎቶውን (Avatar icon) መደበቂያ */
+    [data-testid="stHeader"] img {
+        display: none !important;
+    }
+
+    /* 5. አይጥ ሲጠጋ የሚመጣውን 'View Profile' በተን መከልከያ */
+    button[aria-label="View profile"], 
+    .st-emotion-cache-1vq4p4l {
+        display: none !important;
+    }
+
+    /* 6. በስተቀኝ በኩል ያለውን የፕሮፋይል በተን ሙሉ በሙሉ ማጥፊያ */
+    [data-testid="stHeaderActionButton"] {
+        display: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
