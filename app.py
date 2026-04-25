@@ -32,34 +32,25 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    /* 1. የ GitHub 'Fork' እና 'GitHub icon' ለመደበቅ */
-    header[data-testid="stHeader"] a[href*="github.com"],
-    header[data-testid="stHeader"] a[aria-label*="GitHub"],
-    header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
+    /* 1. በቀኝ በኩል ከታች የሚታየውን የ Streamlit logo እና ቀይ ምልክት ለመደበቅ */
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
 
-    /* 2. በቀኝ በኩል ከላይ የሚታየውን የ "Deploy" በተን እና ፕሮፋይል ለመደበቅ */
+    /* 2. በስተቀኝ በኩል ከላይ የሚታየውን የ GitHub ፕሮፋይል፣ Fork እና Toolbar መደበቂያ */
+    header[data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0);
+    }
+    
+    /* ሁሉንም የ Header ምልክቶች (GitHub, Fork, Deploy) ለማጥፋት */
+    header[data-testid="stHeader"] a, 
+    header[data-testid="stHeader"] button,
     .stAppDeployButton {
         display: none !important;
     }
-    
+
+    /* 3. በስተቀኝ በኩል ከታች የሚታየውን የ Streamlit 'Manage app' ምልክት ለመደበቅ */
     [data-testid="stToolbar"] {
         display: none !important;
-    }
-
-    /* 3. ሜኑውን (ባለ ሶስት ነጥቡን) እና footer-ን ለመደበቅ */
-    #MainMenu {
-        visibility: hidden;
-    }
-    footer {
-        visibility: hidden;
-    }
-
-    /* 4. የ Sidebar ቀስት (<<) እንዲታይ Header-ን ግልጽ (Transparent) ማድረግ */
-    header[data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0);
     }
     </style>
     """, unsafe_allow_html=True)
