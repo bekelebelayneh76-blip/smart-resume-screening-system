@@ -30,6 +30,7 @@ st.set_page_config(
     layout="wide",
 )
 
+
 # --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
 st.markdown("""
     <style>
