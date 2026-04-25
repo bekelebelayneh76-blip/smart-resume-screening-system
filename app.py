@@ -30,10 +30,9 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
 st.markdown("""
     <style>
-    /* የ GitHub 'Fork' እና 'Deploy' በተን ብቻ ለመደበቅ */
+    /* 1. የ GitHub 'Fork' እና 'GitHub icon' ለመደበቅ */
     header[data-testid="stHeader"] a[href*="github.com"],
     header[data-testid="stHeader"] a[aria-label*="GitHub"],
     header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
@@ -41,12 +40,24 @@ st.markdown("""
         visibility: hidden !important;
     }
 
-    /* ሜኑውን ለመደበቅ */
+    /* 2. በቀኝ በኩል ከላይ የሚታየውን የ "Deploy" በተን እና ፕሮፋይል ለመደበቅ */
+    .stAppDeployButton {
+        display: none !important;
+    }
+    
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+
+    /* 3. ሜኑውን (ባለ ሶስት ነጥቡን) እና footer-ን ለመደበቅ */
     #MainMenu {
         visibility: hidden;
     }
+    footer {
+        visibility: hidden;
+    }
 
-    /* የ Sidebar ቀስት (<<) እንዲታይ Header-ን ሙሉ በሙሉ Display None አናደርገውም */
+    /* 4. የ Sidebar ቀስት (<<) እንዲታይ Header-ን ግልጽ (Transparent) ማድረግ */
     header[data-testid="stHeader"] {
         background-color: rgba(0,0,0,0);
     }
