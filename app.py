@@ -839,7 +839,7 @@ def highlight_row_based_on_final(row: pd.Series) -> list[str]:
     return [style] * len(row)
 
 
-def style_scores_table(df: pd.DataFrame) -> pd.io.formats.style.Styler:
+def style_scores_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
     return (
         df.style
           .apply(highlight_row_based_on_final, axis=1)

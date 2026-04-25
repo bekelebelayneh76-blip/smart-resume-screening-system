@@ -15,16 +15,15 @@ A Python-based resume screening project that uses NLP similarity techniques to m
    ```bash
    pip install -r requirements.txt
    ```
-3. Configure SMTP credentials for email sending:
-   - **For deployment**: Set `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SERVER`, and `SMTP_PORT` in Streamlit secrets (via the Streamlit Cloud dashboard or `secrets.toml`).
-   - **For local testing**: Set the environment variables `SMTP_USERNAME` and `SMTP_PASSWORD`, or create a `.env` file in the project root with these values.
+3. Configure email credentials:
+   - **For deployment**: Set `EMAIL_SENDER` and `EMAIL_PASSWORD` in Streamlit secrets (via the Streamlit Cloud dashboard).
+   - **For local testing**: Create a `.streamlit/secrets.toml` file in the project root with your email credentials.
 
-   Example `.env` file:
-   ```env
-   SMTP_USERNAME=your-email@example.com
-   SMTP_PASSWORD=your-smtp-password
-   SMTP_SERVER=smtp.gmail.com
-   SMTP_PORT=587
+   Example `.streamlit/secrets.toml` file:
+   ```toml
+   [general]
+   EMAIL_SENDER = "your-email@gmail.com"
+   EMAIL_PASSWORD = "your-app-password"
    ```
 4. Generate a sample dataset:
    ```bash
@@ -86,3 +85,5 @@ Then open `http://localhost:8501` in your browser.
 - Evaluation is based on precision, recall, and F1-score.
 
 from datetime import datetime, timedelta
+
+def style_scores_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
