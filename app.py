@@ -29,27 +29,29 @@ st.set_page_config(
     page_icon="📄",
     layout="wide",
 )
-
 st.markdown("""
     <style>
-    /* 1. በቀኝ በኩል ከታች የሚታየውን የ Streamlit logo እና ቀይ ምልክት ለመደበቅ */
-    footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-
-    /* 2. በስተቀኝ በኩል ከላይ የሚታየውን የ GitHub ፕሮፋይል፣ Fork እና Toolbar መደበቂያ */
-    header[data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0);
-    }
-    
-    /* ሁሉንም የ Header ምልክቶች (GitHub, Fork, Deploy) ለማጥፋት */
-    header[data-testid="stHeader"] a, 
-    header[data-testid="stHeader"] button,
-    .stAppDeployButton {
+    /* 1. ሁሉንም Header (GitHub, Fork, Deploy) በአንድ ላይ ለማጥፋት */
+    [data-testid="stHeader"] {
         display: none !important;
     }
 
-    /* 3. በስተቀኝ በኩል ከታች የሚታየውን የ Streamlit 'Manage app' ምልክት ለመደበቅ */
+    /* 2. በስተቀኝ በኩል ከታች የሚታየውን የ Streamlit 'Manage app' Toolbar ለመደበቅ */
     [data-testid="stToolbar"] {
+        display: none !important;
+    }
+
+    /* 3. ሜኑውን እና Footer-ን (Made with Streamlit) ለመደበቅ */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* 4. አጠቃላይ የ Streamlit ተንሳፋፊ ምልክቶችን ለማጥፋት */
+    .stDeployButton {
+        display: none !important;
+    }
+    
+    /* 5. ለተጨማሪ ጥንቃቄ ሁሉንም ማገናኛዎች በ Header ውስጥ መደበቅ */
+    header a {
         display: none !important;
     }
     </style>
