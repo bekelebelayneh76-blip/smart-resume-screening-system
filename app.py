@@ -79,7 +79,7 @@ CUSTOM_CSS = """
 <style>
     /* Header */
     .header {
-        background-color: #006400;
+        background-color: #1B5E20;
         color: white;
         padding: 20px;
         text-align: center;
@@ -134,17 +134,20 @@ CUSTOM_CSS = """
     .submit-btn-container button:hover {
         background-color: #4169E1; /* Royal Blue */
     }
+
+
     /* Footer */
     .footer {
         text-align: center;
         padding: 10px;
-        background-color: #f8f9fa;
-        color: blue;
+        background-color: #1E1E1E;
+        color: white;
         position: fixed;
-        font-weight: bold;
-        font-size: 24px;
+     
+        font-size: 16px;
         bottom: 0;
         width: 100%;
+
     }
 
 
@@ -1197,7 +1200,7 @@ def main():
 
     st.markdown('</div>', unsafe_allow_html=True)
     # Footer
-    st.markdown('<div class="footer">© 2026 Resume Screening System | Mekdela Amba University</div>', unsafe_allow_html=True)
+    st.markdown('<div class="footer">© 2026 Resume Screening System </div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
