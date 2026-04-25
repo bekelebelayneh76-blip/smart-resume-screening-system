@@ -22,6 +22,7 @@ from streamlit.runtime.secrets import StreamlitSecretNotFoundError
 
 
 # ኮዱን እዚህ ጋር ነው መለጠፍ ያለብህ
+
 st.markdown("""
     <style>
     header[data-testid="stHeader"] a {
@@ -32,6 +33,20 @@ st.markdown("""
     }
     #MainMenu {
         visibility: hidden;
+    }
+    /* Hide GitHub Fork icon and Deploy button (Streamlit Cloud compatible) */
+    header[data-testid="stHeader"] a[href*="github.com"],
+    header[data-testid="stHeader"] a:has(svg),
+    header[data-testid="stHeader"] a[aria-label*="GitHub"],
+    header[data-testid="stHeader"] div:has(svg),
+    header[data-testid="stHeader"] button:has(svg),
+    header[data-testid="stHeader"] button[aria-label*="Fork"],
+    header[data-testid="stHeader"] button[aria-label*="Deploy"],
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] > *:not(:has([title*='menu'])) {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -211,24 +226,6 @@ CUSTOM_CSS = """
         margin: 2px;
         border-radius: 15px;
         font-size: 12px;
-    }
-    /* Hide GitHub Fork icon and Deploy button */
-    header[data-testid="stHeader"] a[href*="github.com"],
-    header[data-testid="stHeader"] a[href*="fork"],
-    header[data-testid="stHeader"] button:contains("Deploy"),
-    section[data-testid="stSidebar"] button[title="Collapse"],
-    div[data-testid="deployButton"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-    /* Alternative selectors for newer Streamlit versions */
-    .stApp > header .stGitHubButton,
-    .stApp > header [data-testid="deployButton"],
-    header a[aria-label="Fork"],
-    header button[aria-label*="Deploy"] {
-        display: none !important;
     }
 </style>
 """
