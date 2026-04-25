@@ -30,26 +30,46 @@ st.set_page_config(
     layout="wide",
 )
 
+# --- 2. ከዚያ የ CSS ማስተካከያው ይቀጥላል ---
 st.markdown("""
     <style>
-    /* Hide everything in the header except sidebar toggle button */
-    .stApp header:not(:hover) * {
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }
-    
-    /* Specifically hide profile avatar */
-    .stApp header img[alt="avatar"] {
+            header img {
         display: none !important;
     }
+            
+    /* 1. ያንተ የነበረው ኮድ (GitHub እና Fork ለመደበቅ) */
+    header[data-testid="stHeader"] a[href*="github.com"],
+    header[data-testid="stHeader"] a[aria-label*="GitHub"],
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* 2. ያንተ የነበረው ኮድ (ሜኑውን ለመደበቅ) */
+    #MainMenu {
+        visibility: hidden;
+    }
+
+    /* 3. ያንተ የነበረው ኮድ (Sidebar ቀስት እንዲታይ) */
+    header[data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0);
+    }
+
+    /* --- አዲስ የተጨመረ፡ የፕሮፋይል ፎቶን ብቻ ለመደበቅ --- */
     
-    /* Hide profile avatar by targeting its wrapper */
-    .stApp header .st-emotion-cache-1vq4p4l {
+    /* 4. የፕሮፋይል ፎቶውን (Avatar icon) መደበቂያ */
+    [data-testid="stHeader"] img {
         display: none !important;
     }
-    
-    /* Hide all buttons in header except sidebar toggle */
-    .stApp header button:not([data-testid="stSidebarCollapseButton"]) {
+
+    /* 5. አይጥ ሲጠጋ የሚመጣውን 'View Profile' በተን መከልከያ */
+    button[aria-label="View profile"], 
+    .st-emotion-cache-1vq4p4l {
+        display: none !important;
+    }
+
+    /* 6. በስተቀኝ በኩል ያለውን የፕሮፋይል በተን ሙሉ በሙሉ ማጥፊያ */
+    [data-testid="stHeaderActionButton"] {
         display: none !important;
     }
     </style>
