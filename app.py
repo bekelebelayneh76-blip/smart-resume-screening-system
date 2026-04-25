@@ -20,6 +20,24 @@ from src.data_utils import extract_text_from_file, preprocess_text
 from src.modeling import compute_weighted_score, apply_min_max_scaling
 from streamlit.runtime.secrets import StreamlitSecretNotFoundError
 
+
+# ኮዱን እዚህ ጋር ነው መለጠፍ ያለብህ
+st.markdown("""
+    <style>
+    header[data-testid="stHeader"] a {
+        display: none !important;
+    }
+    .stAppDeployButton {
+        display: none !important;
+    }
+    #MainMenu {
+        visibility: hidden;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# የቀረው የፕሮግራምህ ክፍል እዚህ ይቀጥላል...
+
 st.set_page_config(
     page_title="Resume Screening System",
     page_icon="📄",
@@ -97,6 +115,16 @@ CUSTOM_CSS = """
         bottom: 0;
         width: 100%;
     }
+
+
+ @media (max-width: 768px) {
+        .footer {
+            font-size: 12px;
+            padding: 8px;
+        }
+    }
+
+
     /* Status Badges */
     .badge {
         display: inline-block;
