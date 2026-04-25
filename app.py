@@ -34,15 +34,15 @@ st.markdown("""
     #MainMenu {
         visibility: hidden;
     }
-    /* Hide GitHub Fork icon and Deploy button (Streamlit Cloud compatible) */
+    /* Hide GitHub Fork and Deploy button, but NOT the sidebar collapse arrow */
     header[data-testid="stHeader"] a[href*="github.com"],
-    header[data-testid="stHeader"] a:has(svg),
     header[data-testid="stHeader"] a[aria-label*="GitHub"],
-    header[data-testid="stHeader"] div:has(svg),
-    header[data-testid="stHeader"] button:has(svg),
+    header[data-testid="stHeader"] a:has(svg),
     header[data-testid="stHeader"] button[aria-label*="Fork"],
     header[data-testid="stHeader"] button[aria-label*="Deploy"],
-    header[data-testid="stHeader"] [data-testid="stToolbarActions"] > *:not(:has([title*='menu'])) {
+    header[data-testid="stHeader"] div:has(svg),
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] > a[href*="github.com"],
+    header[data-testid="stHeader"] [data-testid="stToolbarActions"] > a[aria-label*="GitHub"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
