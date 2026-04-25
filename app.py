@@ -74,7 +74,6 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
-
 CUSTOM_CSS = """
 <style>
     /* Header */
