@@ -76,8 +76,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 CUSTOM_CSS = """
-# በፋይል መስቀያ ገጹ ላይ የሚቀመጥ ማሳሰቢያ
-st.info("💡 **ማሳሰቢያ፦** ሲስተሙ መረጃዎችን በትክክል እንዲያነብ እባክዎ በሪዙሜዎ ውስጥ 'Emoji' ወይም በጣም ልዩ የሆኑ የዲዛይን ምልክቶችን አይጠቀሙ።")
+
 <style>
     /* Header */
     .header {
