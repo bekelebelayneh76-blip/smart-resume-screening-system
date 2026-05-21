@@ -22,7 +22,7 @@ from streamlit.runtime.secrets import StreamlitSecretNotFoundError
 
 
 
-# የቀረው የፕሮግራምህ ክፍል እዚህ ይቀጥላል...
+# የቀረው የፕሮግራምህ ክፍል እዚህ ይቀጥላ
 
 st.set_page_config(
     page_title="Resume Screening System",
